@@ -122,8 +122,8 @@ resource "outscale_security_group_rule" "hackathon_adminer" {
 #   r8 - The number of GB RAM (=8)
 #   p1 - performance. Possible values: [1,2,3], where 1 is highest
 resource "outscale_vm" "hackathon_db1" {
-  image_id      = "ami-bb490c7e"
-  vm_type       = "tinav5.c4r8p1"
+  image_id      = "ami-cca153b7"
+  vm_type       = "tinav5.c2r4p3"
   keypair_name  = "${outscale_keypair.keypair01.keypair_name}"
   security_group_ids = [outscale_security_group.hackathon_common.security_group_id, outscale_security_group.hackathon_postgre.security_group_id, outscale_security_group.hackathon_mongodb.security_group_id]
   tags {
@@ -133,9 +133,9 @@ resource "outscale_vm" "hackathon_db1" {
   block_device_mappings {
     device_name = "/dev/sdb"
     bsu {
-        volume_size           = 115
-        volume_type           = "io1"
-        iops                  = 150
+        volume_size           = 5
+        volume_type           = "gp2"
+        iops                  = 1000
         delete_on_vm_deletion = true
     }
   }
@@ -212,11 +212,11 @@ resource "outscale_vm" "hackathon_db1" {
   }
 }
 
-########### VM with Microservice1 ###########
+########### VM with Microservice1 ###########$
 
 resource "outscale_vm" "hackathon_ms1" {
-  image_id      = "ami-bb490c7e"
-  vm_type       = "tinav5.c4r8p1"
+  image_id      = "ami-cca153b7"
+  vm_type       = "tinav5.c1r2p3"
   keypair_name  = "${outscale_keypair.keypair01.keypair_name}"
   security_group_ids = [outscale_security_group.hackathon_common.security_group_id,outscale_security_group.hackathon_web.security_group_id]
   tags {
@@ -226,9 +226,9 @@ resource "outscale_vm" "hackathon_ms1" {
   block_device_mappings {
     device_name = "/dev/sdb"
     bsu {
-        volume_size           = 115
-        volume_type           = "io1"
-        iops                  = 150
+        volume_size           = 5
+        volume_type           = "gp2"
+        iops                  = 1000
         delete_on_vm_deletion = true
     }
   }
@@ -325,8 +325,8 @@ resource "outscale_vm" "hackathon_ms1" {
 ########### VM with App1 ###########
 
 resource "outscale_vm" "hackathon_app1" {
-  image_id      = "ami-bb490c7e"
-  vm_type       = "tinav5.c4r8p1"
+  image_id      = "ami-cca153b7"
+  vm_type       = "tinav5.c2r4p3"
   keypair_name  = "${outscale_keypair.keypair01.keypair_name}"
   security_group_ids = [outscale_security_group.hackathon_common.security_group_id]
   tags {
@@ -336,9 +336,9 @@ resource "outscale_vm" "hackathon_app1" {
   block_device_mappings {
     device_name = "/dev/sdb"
     bsu {
-        volume_size           = 115
-        volume_type           = "io1"
-        iops                  = 150
+        volume_size           = 5
+        volume_type           = "gp2"
+        iops                  = 1000
         delete_on_vm_deletion = true
     }
   }
