@@ -125,7 +125,7 @@ resource "outscale_vm" "hackathon_db1" {
   image_id      = "ami-9550ba0f"
   vm_type       = "tinav5.c2r4p3"
   keypair_name  = "${outscale_keypair.keypair01.keypair_name}"
-  security_group_ids = [outscale_security_group.hackathon_common.security_group_id, outscale_security_group.hackathon_postgre.security_group_id, outscale_security_group.hackathon_mongodb.security_group_id]
+  security_group_ids = [outscale_security_group.hackathon_common.security_group_id, outscale_security_group.hackathon_postgre.security_group_id, outscale_security_group.hackathon_mongodb.security_group_id,outscale_security_group.hackathon_web.security_group_id]
   tags {
     key   = "name"
     value = "hackathon_db1"
@@ -140,20 +140,35 @@ resource "outscale_vm" "hackathon_db1" {
     }
   }
 
-  # Create SSH connection script
+  # Extract  ssh key to local file in ~/.ssh
   provisioner "local-exec" {
-    command = "echo 'ssh -o StrictHostKeyChecking=no -i ~/.ssh/hackathon.rsa outscale@${outscale_vm.hackathon_db1.public_ip}' > db1_connect.sh"
+    command = <<EOT
+cat <<EOF > ~/.ssh/hackathon.rsa
+${outscale_keypair.keypair01.private_key}
+EOF
+EOT
   }
 
-  # Save IP to local script file 
+  # Change ssh key file attributes 
   provisioner "local-exec" {
-    command = "echo '${outscale_vm.hackathon_db1.public_ip} db1' >> hosts"
+    command = "chmod 600 ~/.ssh/hackathon.rsa"
+  }
+
+  # Create SSH connection script
+  provisioner "local-exec" {
+    command = "echo 'ssh -o StrictHostKeyChecking=no -i ~/.ssh/hackathon.rsa outscale@${outscale_vm.hackathon_app1.public_ip}' > app1_connect.sh"
+  }
+
+  # Save IP to file
+  provisioner "local-exec" {
+    command = "echo '${outscale_vm.hackathon_app1.public_ip} app1' >> hosts"
   }
 
   # Change script attributes 
   provisioner "local-exec" {
-    command = "chmod +x db1_connect.sh"
+    command = "chmod +x app1_connect.sh"
   }
+
 
   # Copy init script to VM
   provisioner "file" {
@@ -205,66 +220,8 @@ resource "outscale_vm" "hackathon_db1" {
     }
   }
 
-  # Clean on destroy
-  provisioner "local-exec" {
-    when    = destroy
-    command = "rm -f db1_connect.sh"
-  }
-}
+  ###### MS1 ######
 
-########### VM with Microservice1 ###########$
-
-resource "outscale_vm" "hackathon_ms1" {
-  image_id      = "ami-9550ba0f"
-  vm_type       = "tinav5.c1r2p3"
-  keypair_name  = "${outscale_keypair.keypair01.keypair_name}"
-  security_group_ids = [outscale_security_group.hackathon_common.security_group_id,outscale_security_group.hackathon_web.security_group_id]
-  tags {
-    key   = "name"
-    value = "hackathon_ms1"
-  }
-  block_device_mappings {
-    device_name = "/dev/sdb"
-    bsu {
-        volume_size           = 5
-        volume_type           = "gp2"
-        iops                  = 1000
-        delete_on_vm_deletion = true
-    }
-  }
-
-  # Create SSH connection script
-  provisioner "local-exec" {
-    command = "echo 'ssh -o StrictHostKeyChecking=no -i ~/.ssh/hackathon.rsa outscale@${outscale_vm.hackathon_ms1.public_ip}' > ms1_connect.sh"
-  }
-
-  # Save IP to file
-  provisioner "local-exec" {
-    command = "echo '${outscale_vm.hackathon_ms1.public_ip} ms1' >> hosts"
-  }  
-
-  # Change script attributes 
-  provisioner "local-exec" {
-    command = "chmod +x ms1_connect.sh"
-  }
-
-  # Pack VSCode
-  provisioner "local-exec" {
-    command = "zip ms1/vscode.zip ms1/vscode/*"
-  }
-
-  # Copy VSCode file to VM
-  provisioner "file" {
-    source      = "ms1/vscode.zip"
-    destination = "/home/outscale/vscode.zip"
-    connection {
-      type = "ssh"
-      user = "outscale"
-      private_key = "${outscale_keypair.keypair01.private_key}"
-      host = self.public_ip
-    }
-  }
-  
   # Copy init script to VM
   provisioner "file" {
     source      = "ms1/init.sh"
@@ -301,94 +258,8 @@ resource "outscale_vm" "hackathon_ms1" {
     }
   }
 
-  # Run init script in VM
-  provisioner "remote-exec" {  
-    inline = [
-      "chmod +x /home/outscale/init.sh",
-      "/home/outscale/init.sh",
-    ]
-    connection {
-      type = "ssh"
-      user = "outscale"
-      private_key = "${outscale_keypair.keypair01.private_key}"
-      host = self.public_ip
-    }
-  }
-  
-  # Clean on destroy
-  provisioner "local-exec" {
-    when    = destroy
-    command = "rm -f ms1_connect.sh"
-  }
-}
 
-########### VM with App1 ###########
-
-resource "outscale_vm" "hackathon_app1" {
-  #image_id      = "ami-cca153b7"
-  image_id      = "ami-9550ba0f"
-  vm_type       = "tinav5.c2r4p3"
-  keypair_name  = "${outscale_keypair.keypair01.keypair_name}"
-  security_group_ids = [outscale_security_group.hackathon_common.security_group_id]
-  tags {
-    key   = "name"
-    value = "hackathon_app1"
-  }
-  block_device_mappings {
-    device_name = "/dev/sdb"
-    bsu {
-        volume_size           = 5
-        volume_type           = "gp2"
-        iops                  = 1000
-        delete_on_vm_deletion = true
-    }
-  }
-
-  # Extract  ssh key to local file in ~/.ssh
-  provisioner "local-exec" {
-    command = <<EOT
-cat <<EOF > ~/.ssh/hackathon.rsa
-${outscale_keypair.keypair01.private_key}
-EOF
-EOT
-  }
-
-  # Change ssh key file attributes 
-  provisioner "local-exec" {
-    command = "chmod 600 ~/.ssh/hackathon.rsa"
-  }
-
-  # Create SSH connection script
-  provisioner "local-exec" {
-    command = "echo 'ssh -o StrictHostKeyChecking=no -i ~/.ssh/hackathon.rsa outscale@${outscale_vm.hackathon_app1.public_ip}' > app1_connect.sh"
-  }
-
-  # Save IP to file
-  provisioner "local-exec" {
-    command = "echo '${outscale_vm.hackathon_app1.public_ip} app1' >> hosts"
-  }
-
-  # Change script attributes 
-  provisioner "local-exec" {
-    command = "chmod +x app1_connect.sh"
-  }
-
-  # Pack VSCode
-  provisioner "local-exec" {
-    command = "zip app1/vscode.zip app1/vscode/*"
-  }
-
-  # Copy VSCode file to VM
-  provisioner "file" {
-    source      = "app1/vscode.zip"
-    destination = "/home/outscale/vscode.zip"
-    connection {
-      type = "ssh"
-      user = "outscale"
-      private_key = "${outscale_keypair.keypair01.private_key}"
-      host = self.public_ip
-    }
-  }
+  ###### APP1 ######
 
   # Pack src
   provisioner "local-exec" {
@@ -457,8 +328,6 @@ EOT
     }
   }
 
-
-  
   # Clean on destroy
   provisioner "local-exec" {
     when    = destroy
@@ -469,5 +338,3 @@ EOT
     command = "rm -f app1_connect.sh"
   }
 }
-
-
