@@ -122,7 +122,7 @@ resource "outscale_security_group_rule" "hackathon_adminer" {
 #   r8 - The number of GB RAM (=8)
 #   p1 - performance. Possible values: [1,2,3], where 1 is highest
 resource "outscale_vm" "hackathon_db1" {
-  image_id      = "ami-cca153b7"
+  image_id      = "ami-9550ba0f"
   vm_type       = "tinav5.c2r4p3"
   keypair_name  = "${outscale_keypair.keypair01.keypair_name}"
   security_group_ids = [outscale_security_group.hackathon_common.security_group_id, outscale_security_group.hackathon_postgre.security_group_id, outscale_security_group.hackathon_mongodb.security_group_id]
@@ -215,7 +215,7 @@ resource "outscale_vm" "hackathon_db1" {
 ########### VM with Microservice1 ###########$
 
 resource "outscale_vm" "hackathon_ms1" {
-  image_id      = "ami-cca153b7"
+  image_id      = "ami-9550ba0f"
   vm_type       = "tinav5.c1r2p3"
   keypair_name  = "${outscale_keypair.keypair01.keypair_name}"
   security_group_ids = [outscale_security_group.hackathon_common.security_group_id,outscale_security_group.hackathon_web.security_group_id]
@@ -325,7 +325,8 @@ resource "outscale_vm" "hackathon_ms1" {
 ########### VM with App1 ###########
 
 resource "outscale_vm" "hackathon_app1" {
-  image_id      = "ami-cca153b7"
+  #image_id      = "ami-cca153b7"
+  image_id      = "ami-9550ba0f"
   vm_type       = "tinav5.c2r4p3"
   keypair_name  = "${outscale_keypair.keypair01.keypair_name}"
   security_group_ids = [outscale_security_group.hackathon_common.security_group_id]
